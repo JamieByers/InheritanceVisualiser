@@ -10,14 +10,17 @@ function M.setup()
     local current_path = vim.api.nvim_buf_get_name(0)
     local filetype = vim.fn.fnamemodify(current_path, ":e")
 
-    local hashed_objects = parser.parse(current_path, filetype)
+    local objects = parser.parse(current_path, filetype)
 
-    if hashed_objects then
-        local child_objects = handler.handle(hashed_objects, filetype)
+    if objects then
+        local child_objects = handler.handle(objects, filetype)
 
         print(vim.inspect(child_objects))
 
         local graphed_objects = graph.graph(child_objects)
+
+
+
 
         renderer.render(graphed_objects)
     end

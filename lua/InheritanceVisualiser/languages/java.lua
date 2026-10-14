@@ -9,16 +9,21 @@ function M.findClassesWithParents(objects)
     local child_objects = {}
     if objects then
         for _, o in ipairs(objects) do
-            if o.node.superclass then
-
+            print(vim.treesitter.get_node_text(o.node.node, 0))
+            local node_identifier = o.node.identifier or nil
+            if node_identifier then
                 local identifier = vim.treesitter.get_node_text(o.node.identifier, o.bufn)
-                local superclass= vim.treesitter.get_node_text(o.node.superclass, o.bufn)
-                local parent = {superclass:gsub("^extends%s+", "")}
-                local row = o.node.node:range()
+                local superclass = o.node.superclass or nil
+                local parents = {}
+                if superclass then
+                    local superclass_text = vim.treesitter.get_node_text(o.node.superclass, o.bufn)
+                    parents = {superclass_text:gsub("^extends%s+", "")} or nil
+                end
+                local row = o.node.node:range() or nil
 
                 local child_object = {
                     identifier = identifier,
-                    parent = {parent[1]},
+                    parents = {parents[1]},
                     body = o.node.class_body,
                     line = row + 1,
                     node = o.node.node
@@ -27,6 +32,7 @@ function M.findClassesWithParents(objects)
 
                 child_objects[identifier] = child_object
             end
+
         end
     end
 

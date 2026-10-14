@@ -16,9 +16,11 @@ end
 -- All language handlers must return the following tables
 -- {
 --   {
---      identifier
---      {parents}
---      body
+        -- identifier = identifier,
+        -- parent = {parents},
+        -- body = o.node.class_body,
+        -- line = row + 1,
+        -- node = o.node.node
 --   }, ...
 -- }
 --

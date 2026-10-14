@@ -28,21 +28,42 @@ function M.getObjectsFromFile(bufn, filetype)
 
     local objects = {}
     local stack = { root }
-    local declarators = { "class", "struct", "enum", "trait" }
+    local declarators = { "class", "struct ", "enum ", "trait " }
+    local excluded_suffixes = { "body" }
 
     while #stack > 0 do
         local node = table.remove(stack)
         local node_type = node:type()
 
         for _, declarator in ipairs(declarators) do
-            if node_type:find(declarator) then
-                table.insert(objects, { node = M.simplifyNode(node), bufn = bufn })
+            local match = node_type:find(declarator,1 ,true)
+
+            if match then
+                local excluded = false
+                for _, suffix in ipairs(excluded_suffixes) do
+                    if node_type:find(suffix, 1, true) then
+                        excluded = true
+                        break
+                    end
+                end
+
+                if not excluded then
+                    table.insert(objects, {
+                        node = M.simplifyNode(node),
+                        bufn = bufn
+                    })
+                end
+
+                break
             end
         end
-
         for child in node:iter_children() do
             table.insert(stack, child)
         end
+    end
+
+    for _, o in ipairs(objects) do
+        print("o", o.node.node)
     end
 
     return objects
