@@ -1,69 +1,43 @@
 local M = {}
 
-function M.parse(root, filetype)
-
-    local bufns = M.getBufferNumbersForEachFile(root, filetype)
-
-    local objects = {}
-
-    for _, bufn in ipairs(bufns) do
-        local objs = M.getObjectsFromFiles(bufn, filetype)
-        for _, obj in ipairs(objs or {}) do
-            table.insert(objects, obj)
-        end
-    end
-
-    return objects
-
-
-end
-
-
-
-
-function M.getBufferNumbersForEachFile(root, ftype, bufns)
-    bufns = bufns or {}
-
-    for name, type in vim.fs.dir(root) do
-        local path = vim.fs.joinpath(root, name)
-
-        if type == "directory" then
-            M.getBufferNumbersForEachFile(path, ftype, bufns)
-        elseif type == "file" then
-            local filetype = vim.filetype.match({ filename = path })
-
-            if filetype == ftype then
-                local bufn  = vim.fn.bufadd(path)
-                table.insert(bufns, bufn)
-            end
-        end
-    end
-
-    return bufns
-end
-
-function M.getObjectsFromFiles(bufn, filetype)
+function M.parse(path, filetype)
+    local bufn = vim.fn.bufadd(path)
+    print(path, bufn)
     vim.fn.bufload(bufn)
 
+    local cwd = vim.fn.getcwd()
+
+    local objects = M.getObjectsFromFile(bufn, filetype)
+
+    return objects
+end
+
+function M.getObjectsFromFile(bufn, filetype)
     local language = vim.treesitter.language.get_lang(filetype)
 
-    local parser = vim.treesitter.get_parser(bufn, language) -- returns []LanguageTree
+    local parser = vim.treesitter.get_parser(bufn, language)
 
     if parser == nil then
+        print("No parser found for" .. filetype)
         return
     end
 
     local tree = parser:parse()[1]
     local root = tree:root()
 
+
     local objects = {}
     local stack = { root }
+    local declarators = { "class", "struct", "enum", "trait" }
 
     while #stack > 0 do
         local node = table.remove(stack)
+        local node_type = node:type()
 
-        if node:type() == "class_declaration" then
-            table.insert(objects, { node = node, bufn = bufn })
+        for _, declarator in ipairs(declarators) do
+            if node_type:find(declarator) then
+                table.insert(objects, { node = M.simplifyNode(node), bufn = bufn })
+            end
         end
 
         for child in node:iter_children() do
@@ -73,6 +47,19 @@ function M.getObjectsFromFiles(bufn, filetype)
 
     return objects
 end
+
+function M.simplifyNode(node)
+    local simplified_node = {
+        node = node
+    }
+
+    for child in node:iter_children() do
+        simplified_node[child:type()] = child
+    end
+
+    return simplified_node
+end
+
 
 
 return M

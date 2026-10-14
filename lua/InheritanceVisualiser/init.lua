@@ -1,20 +1,26 @@
 local M = {}
 
 function M.setup()
-    local root = M.getRoot()
-    print("ROOT: ", root)
+    local parser = require("InheritanceVisualiser.parser")
+    local handler = require("InheritanceVisualiser.languages.handler")
+    local graph = require("InheritanceVisualiser.graph")
+    local renderer = require("InheritanceVisualiser.renderer")
+    local resolver = require("InheritanceVisualiser.resolver")
 
-    if root then
-        local parser = require("InheritanceVisualiser.parser")
-        local handler = require("InheritanceVisualiser.languages.handler")
+    local current_path = vim.api.nvim_buf_get_name(0)
+    local filetype = vim.fn.fnamemodify(current_path, ":e")
 
-        local filetype = M.getCurrentFileType()
-        local objects = parser.parse(root, filetype)
+    local hashed_objects = parser.parse(current_path, filetype)
 
-        handler.handleObjects(objects, filetype, root)
+    if hashed_objects then
+        local child_objects = handler.handle(hashed_objects, filetype)
+
+        print(vim.inspect(child_objects))
+
+        local graphed_objects = graph.graph(child_objects)
+
+        renderer.render(graphed_objects)
     end
-
-
 
     M.createUserCommands()
 
@@ -25,24 +31,11 @@ function M.createUserCommands()
         package.loaded["InheritanceVisualiser"] = nil
         require("InheritanceVisualiser").setup()
     end, {})
-end
 
-function M.getRoot()
-    local root = vim.fs.root(0, ".git")
 
-    if root == nil then
-        local other_preferred_roots = { "src", "pom.xml", "package.json", "go.mod", "Cargo.toml" } -- could add a config to add extra ones through config
+    vim.api.nvim_create_user_command("TFIV", function()
 
-        for _, pfr in ipairs(other_preferred_roots) do
-            root = vim.fs.root(0, pfr)
-            if root then return root end
-        end
-
-        local cwd = vim.fn.getcwd()
-        return vim.fs.dirname(cwd)
-    end
-
-    return root
+    end, {})
 end
 
 function M.getCurrentFileType()

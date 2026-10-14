@@ -1,23 +1,28 @@
 local M = {}
 
-function M.handleObjects(objects, language, root)
+function M.handle(objects, language)
     local supported_languages = { "java" }
 
+    print("HANDLING " .. language)
+
     if vim.tbl_contains(supported_languages, language) then
-        local handler = require("InheritanceVisualiser.languages." .. language)
+        local language_handler = require("InheritanceVisualiser.languages." .. language)
 
-        local simplified_objects = handler.simplifyObjects(objects)
-
-        -- This should always return a table of objects like this
-        -- {
-        --  identifier
-        --  subclass
-        --  actual object
-        --  file?
-        -- }
-
+        return language_handler.handle(objects)
     end
-
 end
+
+--
+-- All language handlers must return the following tables
+-- {
+--   {
+--      identifier
+--      {parents}
+--      body
+--   }, ...
+-- }
+--
+--
+
 
 return M
