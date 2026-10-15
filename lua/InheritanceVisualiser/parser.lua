@@ -2,14 +2,26 @@ local M = {}
 
 function M.parse(path, filetype)
     local bufn = vim.fn.bufadd(path)
-    print(path, bufn)
     vim.fn.bufload(bufn)
-
-    local cwd = vim.fn.getcwd()
 
     local objects = M.getObjectsFromFile(bufn, filetype)
 
     return objects
+end
+
+function M.parseFiles(paths, filetype)
+    local all_objects = {}
+
+    for _, path in ipairs(paths) do
+        local objects = M.parse(path, filetype)
+        if objects then
+            for _, obj in ipairs(objects) do
+                table.insert(all_objects, obj)
+            end
+        end
+    end
+
+    return all_objects
 end
 
 function M.getObjectsFromFile(bufn, filetype)
@@ -18,7 +30,6 @@ function M.getObjectsFromFile(bufn, filetype)
     local parser = vim.treesitter.get_parser(bufn, language)
 
     if parser == nil then
-        print("No parser found for" .. filetype)
         return
     end
 
@@ -60,10 +71,6 @@ function M.getObjectsFromFile(bufn, filetype)
         for child in node:iter_children() do
             table.insert(stack, child)
         end
-    end
-
-    for _, o in ipairs(objects) do
-        print("o", o.node.node)
     end
 
     return objects

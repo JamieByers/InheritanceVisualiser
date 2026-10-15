@@ -1,7 +1,6 @@
 local M = {}
 
 function M.handle(objects)
-    print("USING JAVA HANDLER")
     return M.findClassesWithParents(objects)
 end
 
@@ -9,7 +8,6 @@ function M.findClassesWithParents(objects)
     local child_objects = {}
     if objects then
         for _, o in ipairs(objects) do
-            print(vim.treesitter.get_node_text(o.node.node, 0))
             local node_identifier = o.node.identifier or nil
             if node_identifier then
                 local identifier = vim.treesitter.get_node_text(o.node.identifier, o.bufn)
@@ -26,7 +24,8 @@ function M.findClassesWithParents(objects)
                     parents = {parents[1]},
                     body = o.node.class_body,
                     line = row + 1,
-                    node = o.node.node
+                    node = o.node.node,
+                    bufn = o.bufn
                 }
 
 

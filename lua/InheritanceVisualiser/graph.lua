@@ -11,12 +11,10 @@ function M.graph(objects)
                 local parent_obj = objects[curr_parent]
 
                 if not parent_obj then
-                    print("No parent node found for ", curr_parent)
                     return nil
                 end
 
                 if visited[curr_parent] then
-                    print("CIRCULAR INHERITANCE:", curr_parent)
                     return nil
                 end
 
@@ -26,7 +24,6 @@ function M.graph(objects)
             end
 
 
-            print(path)
             data.path = path
         end
     end

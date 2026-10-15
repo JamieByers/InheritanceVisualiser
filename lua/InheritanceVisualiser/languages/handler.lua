@@ -3,8 +3,6 @@ local M = {}
 function M.handle(objects, language)
     local supported_languages = { "java" }
 
-    print("HANDLING " .. language)
-
     if vim.tbl_contains(supported_languages, language) then
         local language_handler = require("InheritanceVisualiser.languages." .. language)
 
