@@ -1,9 +1,12 @@
 local M = {}
 
-function M.setup()
-    M.createUserCommands()
+function M.setup(opts)
+    local config = require("InheritanceVisualiser.config")
 
-    M.run()
+    opts = opts or {}
+    config.setup(opts)
+
+    M.createUserCommands()
 end
 
 function M.run()
@@ -11,6 +14,7 @@ function M.run()
     local handler = require("InheritanceVisualiser.languages.handler")
     local graph = require("InheritanceVisualiser.graph")
     local renderer = require("InheritanceVisualiser.renderer")
+    local config = require("InheritanceVisualiser.config")
 
     local current_file_path = vim.api.nvim_buf_get_name(0)
     local filetype = vim.fn.fnamemodify(current_file_path, ":e")
@@ -24,10 +28,12 @@ function M.run()
                 local graphed_objects = graph.graph(parsed_objects)
 
                 local path = nil
+                local depth = 0
                 while not graphed_objects do
                     local new_path, file_paths = M.getFilesFromDir(path, filetype)
 
-                    if path == new_path or path == "/" then -- infinite loop protection
+                    depth = depth + 1
+                    if path == new_path or path == "/" or depth > config.get().max_depth then -- infinite loop protection
                         return
                     end
                     path = new_path
@@ -63,22 +69,29 @@ function M.getFilesFromDir(path, language)
 end
 
 function M.createUserCommands()
+    local config = require("InheritanceVisualiser.config")
+
     vim.api.nvim_create_user_command("RIV", function()
         package.loaded["InheritanceVisualiser"] = nil
         require("InheritanceVisualiser").setup()
     end, {})
 
 
-    vim.api.nvim_create_autocmd("BufWritePost", {
-        callback = function()
-            M.run()
-        end,
-    })
-    vim.api.nvim_create_autocmd("BufEnter", {
-        callback = function()
-            M.run()
-        end,
-    })
+    if config.get().run_on_save then
+        vim.api.nvim_create_autocmd("BufWritePost", {
+            callback = function()
+                M.run()
+            end,
+        })
+    end
+
+    if config.get().run_on_save then
+        vim.api.nvim_create_autocmd("BufEnter", {
+            callback = function()
+                M.run()
+            end,
+        })
+    end
 end
 
 function M.getCurrentFileType()
